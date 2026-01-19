@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Export Website Data</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+        .instructions {
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        .instructions ol {
+            margin: 10px 0;
+            padding-left: 20px;
+        }
+        .instructions li {
+            margin: 5px 0;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 5px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        .success {
+            background: #d4edda;
+            border: 1px solid #28a745;
+            color: #155724;
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 20px;
+            display: none;
+        }
+        textarea {
+            width: 100%;
+            height: 200px;
+            font-family: monospace;
+            font-size: 12px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📤 Export Website Data for Deployment</h1>
+        
+        <div class="instructions">
+            <strong>⚠️ IMPORTANT: How to Make Your Updates Visible to All Visitors</strong>
+            <ol>
+                <li>Click "Export Data" button below</li>
+                <li>Copy the generated code</li>
+                <li>Open <code>config.js</code> file in your project</li>
+                <li>Replace the entire CONFIG object with the copied code</li>
+                <li>Save the file and push to GitHub/GitLab</li>
+                <li>Cloudflare will auto-deploy and ALL visitors will see your updates!</li>
+            </ol>
+        </div>
+
+        <button onclick="exportData()">📤 Export Data</button>
+        <button onclick="downloadData()">💾 Download as File</button>
+
+        <div id="success" class="success">
+            ✅ Data exported successfully! Copy the code below and paste it into config.js
+        </div>
+
+        <textarea id="exportedData" placeholder="Exported data will appear here..."></textarea>
+    </div>
+
+    <script src="config.js"></script>
+    <script>
+        function exportData() {
+            const savedConfig = localStorage.getItem('websiteConfig');
+            
+            if (!savedConfig) {
+                alert('No data found in localStorage. Please add content via Admin Panel first.');
+                return;
+            }
+
+            try {
+                const config = JSON.parse(savedConfig);
+                
+                // Generate the config.js content
+                const configCode = `// Configuration file - Production Ready
+// Last exported: ${new Date().toLocaleString()}
+const CONFIG = ${JSON.stringify(config, null, 4)};
+
+// Initialize menu items and language if not present in localStorage
+(function initializeMenuConfig() {
+    const savedConfig = localStorage.getItem('websiteConfig');
+    if (savedConfig) {
+        try {
+            const parsed = JSON.parse(savedConfig);
+            
+            // Initialize menuItems if not present
+            if (!parsed.menuItems || !Array.isArray(parsed.menuItems)) {
+                parsed.menuItems = CONFIG.menuItems;
+            }
+            
+            // Initialize language if not present
+            if (!parsed.language) {
+                parsed.language = "en";
+            }
+            
+            // Save back to localStorage
+            localStorage.setItem('websiteConfig', JSON.stringify(parsed));
+        } catch (error) {
+            console.error('Error initializing menu config:', error);
+        }
+    } else {
+        // If no saved config, use the CONFIG from this file
+        localStorage.setItem('websiteConfig', JSON.stringify(CONFIG));
+    }
+})();
+`;
+
+                document.getElementById('exportedData').value = configCode;
+                document.getElementById('success').style.display = 'block';
+                
+                // Auto-select the text for easy copying
+                document.getElementById('exportedData').select();
+                
+            } catch (error) {
+                alert('Error exporting data: ' + error.message);
+            }
+        }
+
+        function downloadData() {
+            const data = document.getElementById('exportedData').value;
+            
+            if (!data) {
+                alert('Please export data first!');
+                return;
+            }
+
+            const blob = new Blob([data], { type: 'text/javascript' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'config.js';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            
+            alert('✅ config.js downloaded! Replace the old config.js file with this one, then push to GitHub.');
+        }
+    </script>
+</body>
+</html>
